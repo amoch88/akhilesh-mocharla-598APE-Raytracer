@@ -20,6 +20,9 @@ Autonoma::Autonoma(const Camera& c): camera(c){
    listEnd = NULL;
    lightStart = NULL;
    lightEnd = NULL;
+   meshStart = NULL;
+   meshEnd = NULL;
+   meshBoundsEnabled = false;
    depth = 10;
    skybox = BLACK;
 }
@@ -29,8 +32,63 @@ Autonoma::Autonoma(const Camera& c, Texture* tex): camera(c){
    listEnd = NULL;
    lightStart = NULL;
    lightEnd = NULL;
+   meshStart = NULL;
+   meshEnd = NULL;
+   meshBoundsEnabled = false;
    depth = 10;
    skybox = tex;
+}
+
+bool Autonoma::rayHitsMeshBounds(const Ray& ray){
+   if(!meshBoundsEnabled)
+      return true;
+
+   double tmin = -1e300;
+   double tmax =  1e300;
+
+   const double origin[3] = {
+      ray.point.x, ray.point.y, ray.point.z
+   };
+
+   const double dir[3] = {
+      ray.vector.x, ray.vector.y, ray.vector.z
+   };
+
+   const double bmin[3] = {
+      meshMinX, meshMinY, meshMinZ
+   };
+
+   const double bmax[3] = {
+      meshMaxX, meshMaxY, meshMaxZ
+   };
+
+   for(int i = 0; i < 3; ++i){
+      if(dir[i] > -1e-12 && dir[i] < 1e-12){
+         if(origin[i] < bmin[i] || origin[i] > bmax[i])
+            return false;
+      }
+      else{
+         double t1 = (bmin[i] - origin[i]) / dir[i];
+         double t2 = (bmax[i] - origin[i]) / dir[i];
+
+         if(t1 > t2){
+            double tmp = t1;
+            t1 = t2;
+            t2 = tmp;
+         }
+
+         if(t1 > tmin)
+            tmin = t1;
+
+         if(t2 < tmax)
+            tmax = t2;
+
+         if(tmin > tmax)
+            return false;
+      }
+   }
+
+   return tmax >= 0.0;
 }
 
 void Autonoma::addShape(Shape* r){

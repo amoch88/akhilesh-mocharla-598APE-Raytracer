@@ -55,6 +55,13 @@ void calcColor(unsigned char* toFill,Autonoma* c, const Ray& ray, unsigned int d
    Shape* curShape = nullptr;
 
    while (t != NULL) {
+      if (c->meshBoundsEnabled &&
+          t == c->meshStart &&
+          !c->rayHitsMeshBounds(ray)) {
+         t = c->meshEnd->next;
+         continue;
+      }
+
       double time = t->data->getIntersection(ray);
 
       if (time < curTime) {

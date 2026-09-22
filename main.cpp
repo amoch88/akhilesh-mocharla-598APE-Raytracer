@@ -324,11 +324,51 @@ Autonoma* createInputs(const char* inputFile) {
             fclose(vectors);
             unsigned int* polys = getTriangles(triangles, num_polygons);
             fclose(triangles);
-            Vector offset(off_x, off_y, off_z); 
+            Vector offset(off_x, off_y, off_z);
+
+            // Coarse AABB acceleration for very large meshes such as
+            // the 111748-triangle elephant.
+            if(num_polygons > 10000){
+               MAIN_DATA->meshBoundsEnabled = true;
+
+               MAIN_DATA->meshMinX = MAIN_DATA->meshMaxX = points[0].x + off_x;
+               MAIN_DATA->meshMinY = MAIN_DATA->meshMaxY = points[0].y + off_y;
+               MAIN_DATA->meshMinZ = MAIN_DATA->meshMaxZ = points[0].z + off_z;
+
+               for(int i = 1; i < num_points; ++i){
+                  const double x = points[i].x + off_x;
+                  const double y = points[i].y + off_y;
+                  const double z = points[i].z + off_z;
+
+                  if(x < MAIN_DATA->meshMinX) MAIN_DATA->meshMinX = x;
+                  if(x > MAIN_DATA->meshMaxX) MAIN_DATA->meshMaxX = x;
+
+                  if(y < MAIN_DATA->meshMinY) MAIN_DATA->meshMinY = y;
+                  if(y > MAIN_DATA->meshMaxY) MAIN_DATA->meshMaxY = y;
+
+                  if(z < MAIN_DATA->meshMinZ) MAIN_DATA->meshMinZ = z;
+                  if(z > MAIN_DATA->meshMaxZ) MAIN_DATA->meshMaxZ = z;
+               }
+            }
+
             for(int i = 0; i<num_polygons; i++){
-               Triangle* shape = new Triangle(points[polys[3*i]] + offset, points[polys[3*i+1]] + offset, points[polys[3*i+2]] + offset, texture);
+               Triangle* shape = new Triangle(
+                  points[polys[3*i]] + offset,
+                  points[polys[3*i+1]] + offset,
+                  points[polys[3*i+2]] + offset,
+                  texture
+               );
+
                MAIN_DATA->addShape(shape);
                shape->normalMap = normalMap;
+
+               if(num_polygons > 10000){
+                  if(i == 0)
+                     MAIN_DATA->meshStart = MAIN_DATA->listEnd;
+
+                  if(i == num_polygons - 1)
+                     MAIN_DATA->meshEnd = MAIN_DATA->listEnd;
+               }
             }
          } else {
            printf("Unknown object type %s\n", object_type);
