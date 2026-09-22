@@ -1,0 +1,7 @@
+
+# Build artifacts
+*.obj
+*.exe
+perf.data*
+output/*.ppm
+output/*.mp4
