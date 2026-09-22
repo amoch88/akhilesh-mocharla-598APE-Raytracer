@@ -48,7 +48,7 @@ void insertionSort(TimeAndShape *arr, int n) {
     }
 }
 
-void calcColor(unsigned char* toFill,Autonoma* c, Ray ray, unsigned int depth){
+void calcColor(unsigned char* toFill,Autonoma* c, const Ray& ray, unsigned int depth){
    ShapeNode* t = c->listStart;
 
    double curTime = inf;
