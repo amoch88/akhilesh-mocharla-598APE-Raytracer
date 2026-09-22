@@ -1,8 +1,13 @@
 #include "triangle.h"
 
-Triangle::Triangle(Vector c, Vector b, Vector a, Texture* t):Plane(Vector(0,0,0), t, 0., 0., 0., 0., 0.){
+Triangle::Triangle(Vector c, Vector b, Vector a, Texture* t)
+   : Plane(Vector(0,0,0), t, 0., 0., 0., 0., 0.),
+     edge1(b - c),
+     edge2(a - c)
+{
    center = c;
-   Vector righta = (b-c);
+
+   Vector righta = edge1;
    textureX = righta.mag();
    right = righta/textureX;
    vect = right.cross(b-a).normalize();
@@ -39,12 +44,32 @@ Triangle::Triangle(Vector c, Vector b, Vector a, Texture* t):Plane(Vector(0,0,0)
 }
 
 double Triangle::getIntersection(const Ray& ray){
-   double time = Plane::getIntersection(ray);
-   if(time==inf) 
-      return time;
-   Vector dist = solveScalers(right, up, vect, ray.point+ray.vector*time-center); 
-   unsigned char tmp = (thirdX - dist.x) * textureY + (thirdX-textureX) * (dist.y - textureY) < 0.0;
-   return((tmp!=(textureX * dist.y < 0.0)) || (tmp != (dist.x * textureY - thirdX * dist.y < 0.0)))?inf:time;
+   const double EPSILON = 1e-9;
+
+   const Vector pvec = ray.vector.cross(edge2);
+   const double det = edge1.dot(pvec);
+
+   // Parallel to triangle plane.
+   if(det > -EPSILON && det < EPSILON)
+      return inf;
+
+   const double invDet = 1.0 / det;
+
+   const Vector tvec = ray.point - center;
+   const double u = tvec.dot(pvec) * invDet;
+
+   if(u < 0.0 || u > 1.0)
+      return inf;
+
+   const Vector qvec = tvec.cross(edge1);
+   const double v = ray.vector.dot(qvec) * invDet;
+
+   if(v < 0.0 || u + v > 1.0)
+      return inf;
+
+   const double time = edge2.dot(qvec) * invDet;
+
+   return (time > 0.0) ? time : inf;
 }
 
 bool Triangle::getLightIntersection(const Ray& ray, double* fill){
