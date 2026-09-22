@@ -23,7 +23,9 @@ const char* findExtension(const char* s);
 
 double ground(double e);
 
-double fix(double a);
+inline double fix(double a){
+   return a - floor(a);
+}
 
 char lowerCase(char c);
 
